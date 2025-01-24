@@ -1,0 +1,149 @@
+import discord
+from discord.ext import commands
+from discord import app_commands
+from discord.ui import Select, Button, View
+import json
+
+intents = discord.Intents.default()
+intents.messages = True
+intents.message_content = True
+intents.members = True
+
+bot = commands.Bot(command_prefix='', intents=intents)
+
+STAFF_ID = 1234567890  # REPLACE WITH YOUR STAFF ID
+PRODUCTS = [
+    {
+        "emoji": "🎬",
+        "name": "Netflix",
+        "desc": "Premium streaming service",
+        "price": "30k/tháng"
+    },
+    {
+        "emoji": "📺",
+        "name": "Disney+",
+        "desc": "Streaming service for Disney content",
+        "price": "25k/tháng"
+    }
+]
+
+try:
+    with open('ticket_count.json', 'r') as f:
+        ticket_count = json.load(f).get('count', 0)
+except FileNotFoundError:
+    ticket_count = 0
+
+def save_ticket_count():
+    with open('ticket_count.json', 'w') as f:
+        json.dump({'count': ticket_count}, f)
+
+class ProductSelect(Select):
+    def __init__(self):
+        options = []
+        for product in PRODUCTS:
+            # Parse emoji string
+            emoji_str = product["emoji"]
+            
+            if emoji_str.startswith("<"):
+                emoji = discord.PartialEmoji.from_str(emoji_str)
+            else:
+                emoji = emoji_str
+
+            options.append(
+                discord.SelectOption(
+                    emoji=emoji,
+                    label=product["name"],
+                    description=product["desc"][:100]
+                )
+            )
+        
+        super().__init__(
+            placeholder="Chọn sản phẩm...",
+            options=options,
+            custom_id="product_select"
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        selected = next(p for p in PRODUCTS if p["name"] == self.values[0])
+        embed = discord.Embed(
+            title=f"{selected['emoji']} {selected['name']}",
+            description=f"**Giá:** {selected['price']}",
+            color=0x00ff00
+        )
+        
+        view = ConfirmView(selected)
+        await interaction.response.send_message(
+            embed=embed,
+            view=view,
+            ephemeral=True
+        )
+
+class ConfirmView(View):
+    def __init__(self, product):
+        super().__init__()
+        self.product = product
+
+    @discord.ui.button(label="Mua", style=discord.ButtonStyle.green)
+    async def confirm(self, interaction: discord.Interaction, button: Button):
+        global ticket_count
+        ticket_count += 1
+        save_ticket_count()
+        
+        try:
+            thread = await interaction.channel.create_thread(
+                name=f"Đơn hàng {ticket_count}",
+                type=discord.ChannelType.private_thread
+            )
+            
+            await thread.add_user(interaction.user)
+            staff = interaction.guild.get_member(STAFF_ID)
+            if staff:
+                await thread.add_user(staff)
+
+            await thread.send(
+                f"{interaction.user.mention} bạn muốn mua gói **{self.product['name']}** nào     ạ?\n"
+                f"{staff.mention if staff else ''}"
+            )
+            
+            await interaction.response.send_message(
+                f"Created thread: {thread.mention}",
+                ephemeral=True
+            )
+            
+        except Exception as e:
+            await interaction.response.send_message(
+                f"Lỗi khi tạo đơn hàng: {str(e)}",
+                ephemeral=True
+            )
+
+    @discord.ui.button(label="Bỏ qua", style=discord.ButtonStyle.red)
+    async def cancel(self, interaction: discord.Interaction, button: Button):
+        await interaction.response.defer()
+        await interaction.delete_original_response()
+
+class BaoGiaView(View):
+    def __init__(self):
+        super().__init__(timeout=None)
+        self.add_item(ProductSelect())
+
+@bot.tree.command(name="baogia", description="Tạo báo giá và đơn hàng")
+async def baogia(interaction: discord.Interaction):
+    embed = discord.Embed(
+        title="📋 Danh sách sản phẩm",
+        description="Vui lòng chọn sản phẩm bạn quan tâm:",
+        color=0x7289da
+    )
+    
+    view = BaoGiaView()
+    await interaction.response.send_message(embed=embed, view=view, ephemeral=False)
+
+@bot.event
+async def on_ready():
+    print(f'Logged in as {bot.user}')
+    try:
+        synced = await bot.tree.sync()
+        print(f"Synced {len(synced)} commands")
+    except Exception as e:
+        print(e)
+
+bot.run("token")
