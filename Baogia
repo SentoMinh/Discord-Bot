@@ -3,30 +3,37 @@ from discord.ext import commands
 from discord import app_commands
 from discord.ui import Select, Button, View
 import json
+from datetime import datetime
 
 intents = discord.Intents.default()
 intents.messages = True
 intents.message_content = True
 intents.members = True
 
-bot = commands.Bot(command_prefix='', intents=intents)
+bot = commands.Bot(command_prefix='!', intents=intents)
 
+# Configuration
 STAFF_ID = 1234567890  # REPLACE WITH YOUR STAFF ID
 PRODUCTS = [
     {
-        "emoji": "🎬",
+        "emoji": "📺",
         "name": "Netflix",
-        "desc": "Premium streaming service",
-        "price": "30k/tháng"
+        "desc": "giá netflix"
     },
     {
-        "emoji": "📺",
-        "name": "Disney+",
-        "desc": "Streaming service for Disney content",
-        "price": "25k/tháng"
+        "emoji": "🔰"
+        "name":"Adgruad"
+        "desc": "Adgruad Vĩnh Viễn"
+    },
+    {
+        "emoji":"⊞"
+        "name":"Windows"
+        "desc": "Kích hoạt Windows bản quyền"
     }
+
 ]
 
+# Ticket counter 
 try:
     with open('ticket_count.json', 'r') as f:
         ticket_count = json.load(f).get('count', 0)
@@ -36,21 +43,19 @@ except FileNotFoundError:
 def save_ticket_count():
     with open('ticket_count.json', 'w') as f:
         json.dump({'count': ticket_count}, f)
-
+#custom emoji class
 class ProductSelect(Select):
     def __init__(self):
         options = []
         for product in PRODUCTS:
-            # Parse emoji string
             emoji_str = product["emoji"]
-            
             if emoji_str.startswith("<"):
                 emoji = discord.PartialEmoji.from_str(emoji_str)
             else:
                 emoji = emoji_str
 
             options.append(
-                discord.SelectOption(
+                discord.SelectOption( 
                     emoji=emoji,
                     label=product["name"],
                     description=product["desc"][:100]
@@ -65,11 +70,66 @@ class ProductSelect(Select):
 
     async def callback(self, interaction: discord.Interaction):
         selected = next(p for p in PRODUCTS if p["name"] == self.values[0])
+
+        if selected["name"] == "Netflix":
+            # Custom embed
+            embed = discord.Embed(
+                title="Profile 𝗡𝗲𝘁𝗳𝗹𝗶𝘅 Riêng Tư",
+                color=12141023,
+                timestamp=datetime.fromisoformat("2025-01-24T01:28:00.000Z")
+            )
+            embed.add_field(
+                name="> Giá 1 Tháng",
+                value="```ansi\n [2;45m[0m[2;35m 55.000 VNĐ [0m```",
+                inline=False
+            )
+            embed.add_field(
+                name="> Giá 3 Tháng",
+                value="```ansi\n [2;45m[0m[2;35m160.000 VNĐ[0m```",
+                inline=False
+            )
+            embed.add_field(
+                name="Gia hạn chính chủ:",
+                value="```ansi\n [2;45m[0m[2;35mChỉ Khách Quen...[0m```",
+                inline=False
+            )
+            embed.set_image(url="https://images-ext-1.discordapp.net/external/teWc6o4fDdlzKGiiwJMdXv3Dd5VD8SeJLuv9zEKdFYo/https/64.media.tumblr.com/6d99b72021a1854e5cd31c8925cf3e1d/7cbc637e28491939-aa/s1280x1920/2e57304913ab234d3c99769fa253092e7392ca39.gifv?format=webp")
+
+            if selected["name"] == "Adgruad":
         embed = discord.Embed(
-            title=f"{selected['emoji']} {selected['name']}",
-            description=f"**Giá:** {selected['price']}",
-            color=0x00ff00
+            title="Kích Hoạt Adgruad Vĩnh Viễn ",
+            color=12141023,
+            timestamp=datetime.fromisoformat("2025-01-24T01:28:00.000Z")
         )
+        embed.add_field(
+            name="> Giá 1 Thiết Bị",
+            value="```ansi\n[2;45m[0m[2;35m80.000 VNĐ[0m```",
+            inline=False
+        )
+        embed.add_field(
+            name="> Giá 3 Thiết Bị",
+            value="```ansi\n[2;45m[0m[2;35m220.000 VNĐ[0m```",
+            inline=False
+        )
+        embed.add_field(
+            name="> Giá 9 Thiết Bị ",
+            value="```ansi\n[2;45m[0m[2;35m600.000 VNĐ[0m```",
+            inline=False
+        )
+        embed.set_image(url="")
+
+            if selected["name"] == "Windows":
+        embed = discord.Embed(
+            title="Kích hoạt 1 lần và vĩnh viễn",
+            color=12141023,
+            timestamp=datetime.fromisoformat("2025-01-24T01:28:00.000Z")
+        )
+        embed.add_field(
+            name="> Windows 10 (Tất cả phiên )",
+            value="```ansi\n[2;45m[0m[2;35m80.000 VNĐ[0m```",
+            inline=False
+        )
+        embed.set_image(url="")
         
         view = ConfirmView(selected)
         await interaction.response.send_message(
@@ -99,9 +159,9 @@ class ConfirmView(View):
             staff = interaction.guild.get_member(STAFF_ID)
             if staff:
                 await thread.add_user(staff)
-
+            
             await thread.send(
-                f"{interaction.user.mention} bạn muốn mua gói **{self.product['name']}** nào     ạ?\n"
+                f"{interaction.user.mention} bạn muốn mua gói **{self.product['name']}** nào ạ?\n"
                 f"{staff.mention if staff else ''}"
             )
             
