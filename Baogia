@@ -18,7 +18,7 @@ PRODUCTS = [
     {
         "emoji": "📺",
         "name": "Netflix",
-        "desc": "giá netflix"
+        "desc": "Xem Netflix giá rẻ"
     },
     {
         "emoji": "🔰"
@@ -27,9 +27,14 @@ PRODUCTS = [
     },
     {
         "emoji":"⊞"
-        "name":"Windows"
+        "name":"Windows & Office"
         "desc": "Kích hoạt Windows bản quyền"
-    }
+    },
+    {
+        "emoji":""
+        "name":"Spotify"
+        "desc":"Nâng Cấp Tài Khoản Spotìy"
+    },
 
 ]
 
@@ -118,18 +123,35 @@ class ProductSelect(Select):
         )
         embed.set_image(url="")
 
-            if selected["name"] == "Windows":
+            if selected["name"] == "Windows & Office":
         embed = discord.Embed(
             title="Kích hoạt 1 lần và vĩnh viễn",
             color=12141023,
             timestamp=datetime.fromisoformat("2025-01-24T01:28:00.000Z")
         )
         embed.add_field(
-            name="> Windows 10 (Tất cả phiên )",
+            name="> Windows 10 (Tất cả phiên bản )",
             value="```ansi\n[2;45m[0m[2;35m80.000 VNĐ[0m```",
             inline=False
         )
+        embed.add_field(
+            name="> Office 365 (Full app)",
+            value="```ansi\n[2;45m[0m[2;35m175.000 VNĐ[0m```",
+            inline=False
         embed.set_image(url="")
+
+            if selected["name"] == "Spotify":
+                embed = discord.Embed(
+                    title="Giá Spotify",
+                    color=12141023,
+                    timestamp=datetime.fromisoformat("2025-01-24T01:28:00.000Z")
+                    )
+        embed.add_field(
+            name="> ",
+            values="",
+            inline=False
+            )
+        embed.set_image(url=""),
         
         view = ConfirmView(selected)
         await interaction.response.send_message(
@@ -206,4 +228,4 @@ async def on_ready():
     except Exception as e:
         print(e)
 
-bot.run("token")
+bot.run("tokenbot")
